@@ -71,6 +71,7 @@ namespace ImmersiveSea
 				GameObject gameObject2 = UnityEngine.Object.Instantiate(gameObject, labelPosition, gameObject.transform.rotation) as GameObject;
 				gameObject2.name = "Label: " + label.Label;
 				gameObject2.tag = "Label";
+                gameObject2.layer = int.MaxValue;
 				var discoverableLabel = gameObject2.AddComponent<DiscoverableLabel>();
 				discoverableLabel.Label = label;
 				discoverableLabel.Init(label.Subsurface);
