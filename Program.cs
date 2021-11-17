@@ -33,30 +33,32 @@ namespace ImmersiveSea
         public void Awake(){
             modLogger = Logger;
             Logger.LogInfo("Mod started");
-
+            
             var originalILog = AccessTools.Method(typeof(NavigationProvider), "ProgressPanelInteractableUpdate");
             var patchILog = AccessTools.Method(typeof(ImmersiveSea), "onInteractableLogUpdated");
             var originalLog = AccessTools.Method(typeof(NavigationProvider), "ProgressPanelUpdate");
             var patchLog = AccessTools.Method(typeof(ImmersiveSea), "onLogUpdated");
-            PatchMethod(originalILog, patchILog, true);
-            PatchMethod(originalLog, patchLog, true);
+            PatchMethod(originalILog, patchILog);
+            PatchMethod(originalLog, patchLog);
         }
 
-        public static bool onInteractableLogUpdated(string content){
-            return onLogUpdated(content);
+        public static void onInteractableLogUpdated(string content){
+            onLogUpdated(content);
         }
 
         // Temporarily spawn labels above the ship for each progress update, aka log book entry
-        public static bool onLogUpdated(string progress){
+        public static void onLogUpdated(string progress){
             var character = GameProvider.Instance.CurrentCharacter;
             var boat = NavigationProvider.Instance.Boat.transform.position - NavigationProvider.Instance.CurrentBaseTileUpdateBehaviourScript.transform.position;
-            var text = SpliceText(Regex.Replace(Regex.Replace(progress.Replace("</color>", "\n"), @"<[^>]*>", ""), @"\(.*?\)", ""), 40);
+            var text = SpliceText(Regex.Replace(Regex.Replace(progress.Replace("</color>", "\n"), @"<[^>]*>", ""), @"\(.*?\)", ""), 25);
             var currentTile = character.TileConfig.Tiles.First(x => x.Name == character.CurrentTile.Name);
 
             var label = new Sunless.Game.Entities.Geography.TileLabel(){
                 Label = text,
                 Position = new Sunless.Game.Entities.Location.TilePosition(boat.x, boat.y),
                 ParentTile = currentTile,
+                // Don't trigger a discovery by the boat, it breaks the headlight subroutine
+                Radius = int.MinValue
             };
 
             var tile = GameObject.Find("Tile");
@@ -78,7 +80,6 @@ namespace ImmersiveSea
 			}
 
             modLogger.LogInfo($"({label.Position.X}, {label.Position.Y}) Placed label {text}");
-            return true;
         }
 
         public static IEnumerator<object> fadeLabelOut(DiscoverableLabel label){
@@ -105,8 +106,9 @@ namespace ImmersiveSea
                 finalString += stringSplit[i] + " ";
                 charCounter += stringSplit[i].Length;
         
-                if(charCounter > lineLength){
-                    finalString += "\n";
+                if(charCounter > lineLength || stringSplit[i].Contains("\n")){
+                    if(!stringSplit[i].Contains("\n"))
+                        finalString += "\n";
                     charCounter = 0;
                 }
             }
