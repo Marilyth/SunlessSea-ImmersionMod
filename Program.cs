@@ -89,17 +89,22 @@ namespace ImmersiveSea
             do {
                 collided = false;
                 limit--;
-                foreach(var previousLabel in Labels){
-                    var pushVector = (label.gameObject.transform.position - previousLabel.gameObject.transform.position).normalized;
-                    if(pushVector.magnitude == 0){
-                        pushVector = pushVector.RandomPositionInRadius(1);
-                    }
+                foreach(var previousLabel in Labels.ToList()){
+                    try{
+                        var pushVector = (label.gameObject.transform.position - previousLabel.gameObject.transform.position).normalized;
+                        if(pushVector.magnitude == 0){
+                            pushVector = pushVector.RandomPositionInRadius(1);
+                        }
 
-                    Log.LogInfo($"Vector {pushVector.ToString()}");
-                    while(CheckLabelsCollide(label, previousLabel)){
-                        collided = true;
-                        label.gameObject.transform.position += pushVector * 10;
-                        Log.LogInfo($"{label.gameObject.transform.position}");
+                        Log.LogInfo($"Vector {pushVector.ToString()}");
+                        while(CheckLabelsCollide(label, previousLabel)){
+                            collided = true;
+                            label.gameObject.transform.position += pushVector * 10;
+                            Log.LogInfo($"{label.gameObject.transform.position}");
+                        }
+                    } catch (System.Exception e){
+                        Log.LogInfo($"Pushing label \"{previousLabel.Label.Label}\" aborted: {e}");
+                        Labels.Remove(previousLabel);
                     }
                 }
             } while(collided && limit > 0);
