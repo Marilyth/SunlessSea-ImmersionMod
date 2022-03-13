@@ -8,6 +8,7 @@ using Sunless.Game.Scripts.Physics;
 using System.Text.RegularExpressions;
 using System.Linq;
 using System.Collections.Generic;
+using System;
 
 namespace ImmersiveSea
 {
@@ -26,7 +27,6 @@ namespace ImmersiveSea
         {
             Log = Logger;
             Logger.LogInfo("Mod started");
-
             var originalILog = AccessTools.Method(typeof(NavigationProvider), "ProgressPanelInteractableUpdate");
             var patchILog = AccessTools.Method(typeof(ImmersiveSea), "OnInteractableLogUpdated");
             var originalLog = AccessTools.Method(typeof(NavigationProvider), "ProgressPanelUpdate");
@@ -43,42 +43,46 @@ namespace ImmersiveSea
         // Temporarily spawn labels above the ship for each progress update, aka log book entry
         public static void OnLogUpdated(string progress)
         {
-            var character = GameProvider.Instance.CurrentCharacter;
-            var boat = NavigationProvider.Instance.Boat.transform.position - NavigationProvider.Instance.CurrentBaseTileUpdateBehaviourScript.transform.position;
-            var text = SpliceText(Regex.Replace(Regex.Replace(progress.Replace("</color>", "\n"), @"<[^>]*>", ""), @"\(.*?\)", ""), 25);
-            var currentTile = character.TileConfig.Tiles.First(x => x.Name == character.CurrentTile.Name);
+            try{
+                var character = GameProvider.Instance.CurrentCharacter;
+                var boat = NavigationProvider.Instance.Boat.transform.position - NavigationProvider.Instance.CurrentBaseTileUpdateBehaviourScript.transform.position;
+                var text = SpliceText(Regex.Replace(Regex.Replace(progress.Replace("</color>", "\n"), @"<[^>]*>", ""), @"\(.*?\)", ""), 25);
+                var currentTile = character.TileConfig.Tiles.First(x => x.Name == character.CurrentTile.Name);
 
-            var label = new Sunless.Game.Entities.Geography.TileLabel()
-            {
-                Label = text,
-                Position = new Sunless.Game.Entities.Location.TilePosition(boat.x, boat.y),
-                ParentTile = currentTile,
-                // Don't trigger a discovery by the boat, it breaks the headlight subroutine
-                Radius = int.MinValue
-            };
+                var label = new Sunless.Game.Entities.Geography.TileLabel()
+                {
+                    Label = text,
+                    Position = new Sunless.Game.Entities.Location.TilePosition(boat.x, boat.y),
+                    ParentTile = currentTile,
+                    // Don't trigger a discovery by the boat, it breaks the headlight subroutine
+                    Radius = int.MinValue
+                };
 
-            var tile = GameObject.Find("Tile");
-            GameObject gameObject = PrefabHelper.Instance.Get("Sea/Label");
-            bool flag = gameObject == null;
-            if (!flag)
-            {
-                var labelPosition = NavigationProvider.Instance.Boat.transform.position;
-                labelPosition.y += 30;
-                GameObject gameObject2 = UnityEngine.Object.Instantiate(gameObject, labelPosition, gameObject.transform.rotation) as GameObject;
-                gameObject2.name = "Label: " + label.Label;
-                gameObject2.tag = "Label";
-                gameObject2.layer = 0;
-                var discoverableLabel = gameObject2.AddComponent<DiscoverableLabel>();
-                discoverableLabel.Label = label;
-                discoverableLabel.Init(label.Subsurface);
-                discoverableLabel.gameObject.transform.localScale = new Vector3(0.85f, 0.85f);
-                discoverableLabel.Reveal();
-                discoverableLabel.StartCoroutine(FadeLabelOut(discoverableLabel));
-                PushLabel(discoverableLabel);
-                Labels.Add(discoverableLabel);
+                var tile = GameObject.Find("Tile");
+                GameObject gameObject = PrefabHelper.Instance.Get("Sea/Label");
+                bool flag = gameObject == null;
+                if (!flag)
+                {
+                    var labelPosition = NavigationProvider.Instance.Boat.transform.position;
+                    labelPosition.y += 30;
+                    GameObject gameObject2 = UnityEngine.Object.Instantiate(gameObject, labelPosition, gameObject.transform.rotation) as GameObject;
+                    gameObject2.name = "Label: " + label.Label;
+                    gameObject2.tag = "Label";
+                    gameObject2.layer = 0;
+                    var discoverableLabel = gameObject2.AddComponent<DiscoverableLabel>();
+                    discoverableLabel.Label = label;
+                    discoverableLabel.Init(label.Subsurface);
+                    discoverableLabel.gameObject.transform.localScale = new Vector3(0.85f, 0.85f);
+                    discoverableLabel.Reveal();
+                    discoverableLabel.StartCoroutine(FadeLabelOut(discoverableLabel));
+                    PushLabel(discoverableLabel);
+                    Labels.Add(discoverableLabel);
+                }
+
+                Log.LogInfo($"({label.Position.X}, {label.Position.Y}) Placed label {text}");
+            } catch(Exception e){
+                Log.LogError($"Ran into an error: {e}");
             }
-
-            Log.LogInfo($"({label.Position.X}, {label.Position.Y}) Placed label {text}");
         }
 
         // Push labels into a free space, preferable within the current travel vector
