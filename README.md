@@ -2,7 +2,7 @@
 An immersive mod for Sunless Sea, inspired by Sunless Skies. Log entries are temporarily displayed on top of your ship.
 
 To install it:
-1. Download [this zip file](https://github.com/Marilyth/SunlessSea-ImmersionMod/releases/download/0.2/ImmersiveSea.zip)
+1. Download [this zip file](https://github.com/Marilyth/SunlessSea-ImmersionMod/releases/download/0.3.1/ImmersiveSea.zip)
 2. Put it inside your Sunless Sea folder, the one that contains the Sunless Sea.exe
 3. Unpack it there
 
